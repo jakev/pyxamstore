@@ -10,3 +10,5 @@ To use, simply unpack the required files and run the tool:
 This will create a number of files in the `out/` directory ending in `.lz4` (at this point the tool assumes LZ4 packed DLLs). Since these are also not readable, you'll need to unpack these `.lz4` files using a tool such as [lz4\_decompress.py](https://github.com/securitygrind/lz4_decompress/blob/main/lz4_decompress.py):
 
     python lz4_decompress.py out/TestApp.lz4
+
+Additional file format details can be found on my [personal website](https://www.thecobraden.com/posts/unpacking_xamarin_assembly_stores/).
