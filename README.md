@@ -1,5 +1,5 @@
 # Unpacking Xamarin assemblies.blob Files
-This is an alpha release of an `assemblies.blob` AssemblyStore parser written in Python (unfortunately Py2 for now). The tool expects an `assemblies.blob` and `assemblies.manifest` from an APK. Not all files may be supported at this time.
+This is an alpha release of an `assemblies.blob` AssemblyStore parser written in Python. The tool expects an `assemblies.blob` and `assemblies.manifest` from an APK. Not all files may be supported at this time.
 
 ## Usage
 To use, simply unpack the required files and run the tool:
