@@ -4,9 +4,12 @@ import struct
 import argparse
 import os
 import os.path
+import lz4.block
 
 ASSEMBLY_STORE_MAGIC = b"XABA"
 ASSEMBLY_STORE_FORMAT_VERSION = 1
+
+COMPRESSED_ASSEMBLY_MAGIC = b"XALZ"
 
 
 class ManifestEntry(object):
@@ -202,15 +205,39 @@ class AssemblyStore(object):
         i = 0
         for assembly in self.assemblies_list:
 
+            assembly_data = ""
+
             entry = self.manifest_entries.get_idx(i)
 
-            print("Extracting %s..." % entry.name)
-            wfile = open("%s/%s.lz4" % (outpath, entry.name), "wb")
+            # Check if compressed, otherwise write
+            assembly_header = self.raw[assembly.data_offset:assembly.data_offset+4]
+            if assembly_header == COMPRESSED_ASSEMBLY_MAGIC:
+                assembly_data = self.decompress_lz4(self.raw[assembly.data_offset:
+                                                    assembly.data_offset
+                                                    + assembly.data_size])
+            else:
+                assembly_data = self.raw[assembly.data_offset:
+                                         assembly.data_offset + assembly.data_size]
 
-            wfile.write(self.raw[assembly.data_offset:
-                                 assembly.data_offset + assembly.data_size])
+            print("Extracting %s..." % entry.name)
+            wfile = open("%s/%s.dll" % (outpath, entry.name), "wb")
+
+            wfile.write(assembly_data)
             wfile.close()
             i += 1
+
+    @classmethod
+    def decompress_lz4(cls, compressed_data):
+
+        """Unpack an assembly if LZ4 packed"""
+
+        # From: https://github.com/securitygrind/lz4_decompress
+        packed_payload_len = compressed_data[8:12]
+        unpacked_payload_len = struct.unpack('<I', packed_payload_len)[0]
+        compressed_payload = compressed_data[12:]
+
+        return lz4.block.decompress(compressed_payload,
+                                    uncompressed_size=unpacked_payload_len)
 
 
 def read_manifest(in_manifest):
