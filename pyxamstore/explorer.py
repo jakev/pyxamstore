@@ -12,6 +12,7 @@ import json
 
 import lz4.block
 import xxhash
+from pathlib import Path
 
 ASSEMBLY_STORE_MAGIC = b"XABA"
 ASSEMBLY_STORE_FORMAT_VERSION = 1
@@ -270,6 +271,7 @@ class AssemblyStore(object):
                                          assembly.data_offset + assembly.data_size]
 
             print("Extracting %s..." % entry.name)
+            Path(os.path.dirname(out_file)).mkdir(parents=True, exist_ok=True)
             wfile = open(out_file, "wb")
 
             wfile.write(assembly_data)
