@@ -30,7 +30,7 @@ setup(
 
     packages=["pyxamstore"],
 
-    install_requires=open("requirements.txt", "rb").read().split("\n"),
+    install_requires=open("requirements.txt", "rb").read().decode("utf-8").split("\n"),
 
     entry_points={
         'console_scripts': [
