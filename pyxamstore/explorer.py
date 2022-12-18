@@ -10,13 +10,10 @@ import os.path
 import sys
 import json
 
+from . import constants
+
 import lz4.block
 import xxhash
-
-ASSEMBLY_STORE_MAGIC = b"XABA"
-ASSEMBLY_STORE_FORMAT_VERSION = 1
-
-COMPRESSED_DATA_MAGIC = b"XALZ"
 
 
 class ManifestEntry(object):
@@ -119,13 +116,13 @@ class AssemblyStore(object):
         # 16 - 19: StoreID
 
         magic = blob_file.read(4)
-        if magic != ASSEMBLY_STORE_MAGIC:
+        if magic != constants.ASSEMBLY_STORE_MAGIC:
             raise Exception("Invalid Magic: %s" % magic)
 
         version = struct.unpack("I", blob_file.read(4))[0]
-        if version > ASSEMBLY_STORE_FORMAT_VERSION:
+        if version > constants.ASSEMBLY_STORE_FORMAT_VERSION:
             raise Exception("This version is higher than expected! Max = %d, got %d"
-                            % ASSEMBLY_STORE_FORMAT_VERSION, version)
+                            % constants.ASSEMBLY_STORE_FORMAT_VERSION, version)
 
         self.hdr_version = version
 
@@ -133,7 +130,8 @@ class AssemblyStore(object):
         self.hdr_gec = struct.unpack("I", blob_file.read(4))[0]
         self.hdr_store_id = struct.unpack("I", blob_file.read(4))[0]
 
-        print("Number of local entries to extract: %d" % self.hdr_lec)
+        print("Local entry count: %d" % self.hdr_lec)
+        print("Global entry count: %d" % self.hdr_gec)
 
         self.assemblies_list = list()
 
@@ -163,8 +161,13 @@ class AssemblyStore(object):
 
             self.assemblies_list.append(assembly)
 
-            # print("  Data Offset: %d (0x%x)" % (assembly.data_offset, assembly.data_offset))
-            # print("  Data Size: %d (0x%x)" % (assembly.data_size, assembly.data_size))
+            print("  Data Offset: %d (0x%x)" % (assembly.data_offset, assembly.data_offset))
+            print("  Data Size: %d (0x%x)" % (assembly.data_size, assembly.data_size))
+            print("  Config Offset: %d (0x%x)" % (assembly.config_data_offset, assembly.config_data_offset))
+            print("  Config Size: %d (0x%x)" % (assembly.config_data_size, assembly.config_data_size))
+            print("  Debug Offset: %d (0x%x)" % (assembly.debug_data_offset, assembly.debug_data_offset))
+            print("  Debug Size: %d (0x%x)" % (assembly.debug_data_size, assembly.debug_data_size))
+
             i += 1
 
         # Parse Hash data
@@ -189,6 +192,10 @@ class AssemblyStore(object):
             hash_entry.mapping_index = struct.unpack("I", entry[8:12])[0]
             hash_entry.local_store_index = struct.unpack("I", entry[12:16])[0]
             hash_entry.store_id = struct.unpack("I", entry[16:20])[0]
+
+            print("   mapping index: %d" % hash_entry.mapping_index)
+            print("   local store index: %d" % hash_entry.local_store_index)
+            print("   store id: %d" % hash_entry.store_id)
 
             self.global_hash32.append(hash_entry)
 
@@ -256,7 +263,7 @@ class AssemblyStore(object):
 
             # Check if compressed, otherwise write
             assembly_header = self.raw[assembly.data_offset:assembly.data_offset+4]
-            if assembly_header == COMPRESSED_DATA_MAGIC:
+            if assembly_header == constants.COMPRESSED_DATA_MAGIC:
 
                 assembly_data = self.decompress_lz4(self.raw[assembly.data_offset:
                                                     assembly.data_offset
@@ -309,7 +316,7 @@ def lz4_compress(file_data, desc_idx):
     # 12 -  n: compressed data
 
     packed = struct.pack("4sII",
-                         COMPRESSED_DATA_MAGIC,
+                         constants.COMPRESSED_DATA_MAGIC,
                          desc_idx,
                          len(file_data))
 
@@ -440,7 +447,7 @@ def do_pack(in_json_config):
     # Write header
     json_hdr = json_data['header']
     assemblies_blob_f.write(struct.pack("4sIIII",
-                                        ASSEMBLY_STORE_MAGIC,
+                                        constants.ASSEMBLY_STORE_MAGIC,
                                         json_hdr['version'],
                                         json_hdr['lec'],
                                         json_hdr['gec'],
