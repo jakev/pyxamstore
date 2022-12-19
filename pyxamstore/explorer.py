@@ -355,10 +355,6 @@ def read_manifest(in_manifest):
 
     """Read Manifest entries"""
 
-    if not os.path.isfile(in_manifest):
-        print("Manifest file '%s' doesn't exist!" % in_manifest)
-        return None
-
     manifest_list = ManifestList()
     for line in open(in_manifest, "rb").read().split(b"\n"):
         if line == "" or len(line) == 0:
@@ -392,24 +388,35 @@ def usage():
     return 0
 
 
-def do_unpack(in_blob, in_manifest, in_arch):
+def do_unpack(in_directory, in_arch):
 
     """Unpack a assemblies.blob/manifest"""
 
     arch_assemblies = False
 
+    # First check if all files exist.
     if os.path.isdir("out/"):
         print("Out directory already exists!")
         return 3
 
-    # The manifest will have all entries (regardless of whichx
+    manifest_path = os.path.join(in_directory, constants.FILE_ASSEMBLIES_MANIFEST)
+    assemblies_path = os.path.join(in_directory, constants.FILE_ASSEMBLIES_BLOB)
+
+    if not os.path.isfile(manifest_path):
+        print("Manifest file '%s' does not exist!" % manifest_path)
+        return 4
+    elif not os.path.isfile(assemblies_path):
+        print("Main assemblies blob '%s' does not exist!" % assemblies_path)
+        return 4
+
+    # The manifest will have all entries (regardless of which
     # *.blob they're found in. Parse this first, and then handle
     # each blob.
 
-    manifest_entries = read_manifest(in_manifest)
+    manifest_entries = read_manifest(manifest_path)
     if manifest_entries is None:
         print("Unable to parse assemblies.manifest file!")
-        return 4
+        return 5
 
     # Next we'll unpack each *.blob file. The JSON output will be broken
     # broken up my file name. Generally, the stucture will be:
@@ -426,7 +433,7 @@ def do_unpack(in_blob, in_manifest, in_arch):
 
     os.mkdir("out/")
 
-    assembly_store = AssemblyStore(in_blob, manifest_entries)
+    assembly_store = AssemblyStore(assemblies_path, manifest_entries)
 
     if assembly_store.hdr_lec != assembly_store.hdr_gec:
         arch_assemblies = True
@@ -437,7 +444,10 @@ def do_unpack(in_blob, in_manifest, in_arch):
 
     # What about architecture assemblies?
     if arch_assemblies:
-        arch_assembly_store = AssemblyStore(constants.ARCHITECTURE_MAP[in_arch],
+        arch_assemblies_path = os.path.join(in_directory,
+                                            constants.ARCHITECTURE_MAP[in_arch])
+
+        arch_assembly_store = AssemblyStore(arch_assemblies_path,
                                             manifest_entries)
         json_data = arch_assembly_store.extract_all(json_data)
 
@@ -571,18 +581,12 @@ def unpack_store(args):
 
     """Unpack an assemblies store"""
 
-    # TODO: remove -b/-m in favor of -d for directory.
     parser = argparse.ArgumentParser(prog='xamstore unpack',
                                      description='Unpack DLLs from assemblies.blob store.')
-
-    parser.add_argument('--blob', '-b', type=str, metavar='val',
-                        default='assemblies.blob',
-                        dest='blob_file',
-                        help='Input assemblies.blob file.')
-    parser.add_argument('--manifest', '-m', type=str, metavar='val',
-                        default='assemblies.manifest',
-                        dest='manifest_file',
-                        help='Input assemblies.manifest file.')
+    parser.add_argument('--dir', '-d', type=str, metavar='val',
+                        default='./',
+                        dest='directory',
+                        help='Where to load blobs/manifest from.')
     parser.add_argument('--arch', '-a', type=str, metavar='val',
                         default='arm64',
                         dest='architecture',
@@ -590,8 +594,7 @@ def unpack_store(args):
 
     parsed_args = parser.parse_args(args)
 
-    return do_unpack(parsed_args.blob_file,
-                     parsed_args.manifest_file,
+    return do_unpack(parsed_args.directory,
                      parsed_args.architecture)
 
 
