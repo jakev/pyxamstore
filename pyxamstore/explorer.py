@@ -10,10 +10,10 @@ import os.path
 import sys
 import json
 
-from . import constants
-
 import lz4.block
 import xxhash
+
+from . import constants
 
 
 class ManifestEntry(object):
@@ -22,15 +22,17 @@ class ManifestEntry(object):
 
     hash32 = ""
     hash64 = ""
+    blob_id = 0
     blob_idx = 0
     name = ""
 
-    def __init__(self, hash32, hash64, blob_idx, name):
+    def __init__(self, hash32, hash64, blob_id, blob_idx, name):
 
         """Initialize item"""
 
         self.hash32 = hash32
         self.hash64 = hash64
+        self.blob_id = int(blob_id)
         self.blob_idx = int(blob_idx)
         self.name = name
 
@@ -39,12 +41,12 @@ class ManifestList(list):
 
     """List of manifest entries"""
 
-    def get_idx(self, idx):
+    def get_idx(self, blob_id, blob_idx):
 
         """Find entry by ID"""
 
         for entry in self:
-            if entry.blob_idx == idx:
+            if entry.blob_idx == blob_idx and entry.blob_id == blob_id:
                 return entry
         return None
 
@@ -83,6 +85,8 @@ class AssemblyStore(object):
 
     raw = ""
 
+    file_name = ""
+
     manifest_entries = None
 
     hdr_magic = ""
@@ -100,6 +104,7 @@ class AssemblyStore(object):
         """Parse and read store"""
 
         self.manifest_entries = manifest_entries
+        self.file_name = os.path.basename(in_file_name)
 
         blob_file = open(in_file_name, "rb")
 
@@ -220,23 +225,22 @@ class AssemblyStore(object):
 
             i += 1
 
-    def extract_all(self, outpath="out"):
+    def extract_all(self, json_config, outpath="out"):
 
         """Extract everything"""
 
-        os.mkdir(outpath)
-
         # Start the config JSON
-        json_data = dict()
+        store_json = dict()
 
         # Set the JSON header data
-        json_data['header'] = {'version': self.hdr_version,
-                               'lec': self.hdr_lec,
-                               'gec': self.hdr_gec,
-                               'store_id': self.hdr_store_id}
+        store_json['header'] = {'version': self.hdr_version,
+                                'lec': self.hdr_lec,
+                                'gec': self.hdr_gec,
+                                'store_id': self.hdr_store_id}
+
 
         # Set JSON assembly data and start parsing.
-        json_data['assemblies'] = list()
+        store_json['assemblies'] = list()
 
         i = 0
         for assembly in self.assemblies_list:
@@ -249,10 +253,11 @@ class AssemblyStore(object):
 
             assembly_data = ""
 
-            entry = self.manifest_entries.get_idx(i)
+            entry = self.manifest_entries.get_idx(self.hdr_store_id, i)
 
             # Save hash/name/idx to JSON
             assembly_dict['name'] = entry.name
+            assembly_dict['id'] = entry.blob_id
             assembly_dict['idx'] = entry.blob_idx
             assembly_dict['hash32'] = entry.hash32
             assembly_dict['hash64'] = entry.hash64
@@ -283,13 +288,12 @@ class AssemblyStore(object):
             wfile.close()
 
             # Append to assemblies JSON
-            json_data['assemblies'].append(assembly_dict)
+            store_json['assemblies'].append(assembly_dict)
 
             i += 1
 
-        # Save the config data.
-        with open(r'assemblies.json', 'w') as assembly_file:
-            assembly_file.write(json.dumps(json_data, indent=4))
+        json_config['stores'][self.file_name] = store_json
+        return json_config
 
     @classmethod
     def decompress_lz4(cls, compressed_data):
@@ -364,6 +368,7 @@ def read_manifest(in_manifest):
 
         manifest_list.append(ManifestEntry(split_line[0].decode(),   # hash32
                                            split_line[1].decode(),   # hash64
+                                           split_line[2],            # blob_id
                                            split_line[3],            # blob_idx
                                            split_line[4].decode()))  # name
 
@@ -374,35 +379,69 @@ def usage():
 
     """Print usage"""
 
-    print("usage: xam-store-explorer MODE <args>")
+    print("usage: xamstore MODE <args>")
     print("")
     print("   MODES:")
-    print("\tunpack <args>  Unpack assembly blob.")
-    print("\tpack <args>    Repackage assembly blob.")
+    print("\tunpack <args>  Unpack assembly blobs.")
+    print("\tpack <args>    Repackage assembly blobs.")
     print("\thash file_name Generate xxHash values.")
     print("\thelp           Print this message.")
 
     return 0
 
 
-def do_unpack(in_blob, in_manifest):
+def do_unpack(in_blob, in_manifest, in_arch):
 
     """Unpack a assemblies.blob/manifest"""
+
+    arch_assemblies = False
 
     if os.path.isdir("out/"):
         print("Out directory already exists!")
         return 3
+
+    # The manifest will have all entries (regardless of whichx
+    # *.blob they're found in. Parse this first, and then handle
+    # each blob.
 
     manifest_entries = read_manifest(in_manifest)
     if manifest_entries is None:
         print("Unable to parse assemblies.manifest file!")
         return 4
 
+    # Next we'll unpack each *.blob file. The JSON output will be broken
+    # broken up my file name. Generally, the stucture will be:
+    #
+    # assemblies.blob {
+    #   header { .. },
+    #   assemblies { [ .. ] }
+    # },
+    # assemblies.arm.blob {
+    #   ..
+    # }
+    json_data = dict()
+    json_data['stores'] = dict()
+
+    os.mkdir("out/")
+
     assembly_store = AssemblyStore(in_blob, manifest_entries)
 
-    # Do extraction.
-    return assembly_store.extract_all()
+    if assembly_store.hdr_lec != assembly_store.hdr_gec:
+        arch_assemblies = True
+        print("There are more assemblies to unpack here!")
 
+    # Do extraction.
+    json_data = assembly_store.extract_all(json_data)
+
+    # What about architecture assemblies?
+    if arch_assemblies:
+        arch_assembly_store = AssemblyStore(constants.ARCHITECTURE_MAP[in_arch],
+                                            manifest_entries)
+        json_data = arch_assembly_store.extract_all(json_data)
+
+    # Save the large config out.
+    with open(constants.FILE_ASSEMBLIES_JSON, 'w') as assembly_file:
+        assembly_file.write(json.dumps(json_data, indent=4))
 
 def do_pack(in_json_config):
 
@@ -530,9 +569,10 @@ def unpack_store(args):
 
     """Unpack an assemblies store"""
 
-    parser = argparse.ArgumentParser(
-                        prog='xam-store-explorer unpack',
-                        description='Unpack DLLs from assemblies.blob store.')
+    # TODO: remove -b/-m in favor of -d for directory.
+    parser = argparse.ArgumentParser(prog='xamstore unpack',
+                                     description='Unpack DLLs from assemblies.blob store.')
+
     parser.add_argument('--blob', '-b', type=str, metavar='val',
                         default='assemblies.blob',
                         dest='blob_file',
@@ -541,20 +581,24 @@ def unpack_store(args):
                         default='assemblies.manifest',
                         dest='manifest_file',
                         help='Input assemblies.manifest file.')
+    parser.add_argument('--arch', '-a', type=str, metavar='val',
+                        default='arm64',
+                        dest='architecture',
+                        help='Which architecture to unpack: arm(64), x86(_64)')
 
     parsed_args = parser.parse_args(args)
 
     return do_unpack(parsed_args.blob_file,
-                     parsed_args.manifest_file)
+                     parsed_args.manifest_file,
+                     parsed_args.architecture)
 
 
 def pack_store(args):
 
     """Pack an assemblies store"""
 
-    parser = argparse.ArgumentParser(
-                        prog='xam-store-explorer pack',
-                        description='Repackage DLLs into assemblies.blob.')
+    parser = argparse.ArgumentParser(prog='xamstore pack',
+                                     description='Repackage DLLs into assemblies.blob.')
     parser.add_argument('--config', '-c', type=str, metavar='val',
                         default='assemblies.json',
                         dest='config_json',
