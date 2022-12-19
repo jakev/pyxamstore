@@ -282,6 +282,8 @@ class AssemblyStore(object):
                                          assembly.data_offset + assembly.data_size]
 
             print("Extracting %s..." % entry.name)
+            if not os.path.isdir(os.path.dirname(out_file)):
+                os.mkdir(os.path.dirname(out_file))
             wfile = open(out_file, "wb")
 
             wfile.write(assembly_data)
