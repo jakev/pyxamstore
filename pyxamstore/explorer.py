@@ -600,7 +600,6 @@ def do_pack(in_json_config):
 
                 # Write the hash32
                 assemblies_blob_f.seek(next_hash32_offset)
-                print("offset", hex(assemblies_blob_f.tell()))
                 assemblies_blob_f.write(struct.pack("4sIIII",
                                                     hash32,
                                                     0,
@@ -618,7 +617,6 @@ def do_pack(in_json_config):
                 mapping_id = assembly['blob_idx'] if assembly['store_id'] == 0 else store_zero_lec + assembly['blob_idx']
 
                 # Write the hash64
-                print("offset", hex(assemblies_blob_f.tell()))
                 assemblies_blob_f.seek(next_hash64_offset)
                 assemblies_blob_f.write(struct.pack("8sIII",
                                                     hash64,
