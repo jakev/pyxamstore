@@ -27,3 +27,7 @@ From here you'll need to repackage/sign the APK.
 
 # Additional Details
 Additional file format details can be found on my [personal website](https://www.thecobraden.com/posts/unpacking_xamarin_assembly_stores/).
+
+# Known Limitations
+* Python3 support (working on it!)
+* DLLs that have debug/config data associated with them
