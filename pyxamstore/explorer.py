@@ -699,6 +699,7 @@ def main():
 
     if len(sys.argv) < 2:
         print("Mode is required!")
+        usage()
         return -1
 
     sys.argv.pop(0)
