@@ -397,7 +397,7 @@ def usage():
 
     """Print usage"""
 
-    print("usage: xamstore MODE <args>")
+    print("usage: pyxamstore MODE <args>")
     print("")
     print("   MODES:")
     print("\tunpack <args>  Unpack assembly blobs.")
@@ -635,7 +635,7 @@ def unpack_store(args):
 
     """Unpack an assemblies store"""
 
-    parser = argparse.ArgumentParser(prog='xamstore unpack',
+    parser = argparse.ArgumentParser(prog='pyxamstore unpack',
                                      description='Unpack DLLs from assemblies.blob store.')
     parser.add_argument('--dir', '-d', type=str, metavar='val',
                         default='./',
@@ -656,7 +656,7 @@ def pack_store(args):
 
     """Pack an assemblies store"""
 
-    parser = argparse.ArgumentParser(prog='xamstore pack',
+    parser = argparse.ArgumentParser(prog='pyxamstore pack',
                                      description='Repackage DLLs into assemblies.blob.')
     parser.add_argument('--config', '-c', type=str, metavar='val',
                         default='assemblies.json',
