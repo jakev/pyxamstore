@@ -662,7 +662,7 @@ def pack_store(args):
     parser.add_argument('--config', '-c', type=str, metavar='val',
                         default='assemblies.json',
                         dest='config_json',
-                        help='Input assemblies.blob file.')
+                        help='Input assemblies.json file.')
 
     parsed_args = parser.parse_args(args)
 
