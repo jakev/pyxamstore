@@ -1,5 +1,3 @@
-#!/usr/bin/python2
-
 """Setup Script"""
 
 from __future__ import absolute_import

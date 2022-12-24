@@ -1,8 +1,7 @@
-#!/usr/bin/python2
-
 """Pack and unpack Xamarin AssemblyStore files"""
 
 from __future__ import print_function
+from builtins import object
 import struct
 import argparse
 import os
@@ -377,7 +376,7 @@ def read_manifest(in_manifest):
     """Read Manifest entries"""
 
     manifest_list = ManifestList()
-    for line in open(in_manifest, "rb").read().split(b"\n"):
+    for line in open(in_manifest, "r").read().split("\n"):
         if line == "" or len(line) == 0:
             continue
         if line[0:4] == "Hash":
@@ -385,11 +384,11 @@ def read_manifest(in_manifest):
 
         split_line = line.split()
 
-        manifest_list.append(ManifestEntry(split_line[0].decode(),   # hash32
-                                           split_line[1].decode(),   # hash64
-                                           split_line[2],            # blob_id
-                                           split_line[3],            # blob_idx
-                                           split_line[4].decode()))  # name
+        manifest_list.append(ManifestEntry(split_line[0],   # hash32
+                                           split_line[1],   # hash64
+                                           split_line[2],   # blob_id
+                                           split_line[3],   # blob_idx
+                                           split_line[4]))  # name
 
     return manifest_list
 
@@ -511,13 +510,13 @@ def do_pack(in_json_config):
     # This is hacky, but we need the lec/gec if there are multiple stores.
     store_zero_lec = 0
     for assembly_store in json_data['stores']:
-        for store_name, store_data in assembly_store.items():
+        for store_name, store_data in list(assembly_store.items()):
             if store_name == "assemblies.blob":
                 store_zero_lec = store_data['header']['lec']
 
     # Next do the blobs.
     for assembly_store in json_data['stores']:
-        for store_name, store_data in assembly_store.items():
+        for store_name, store_data in list(assembly_store.items()):
 
             out_store_name = "%s.new" % store_name
 
