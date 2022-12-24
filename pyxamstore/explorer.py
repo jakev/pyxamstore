@@ -673,18 +673,18 @@ def pack_store(args):
     return do_pack(parsed_args.config_json)
 
 
-def hash_file(args):
+def gen_hash(args):
 
-    """Generate xxhashes for a given file, mostly for testing"""
+    """Generate xxhashes for a given file path/string, mostly for testing"""
 
     if len(args) < 1:
-        print("Need to provide a file to hash!")
+        print("Need to provide a string to hash!")
         return -1
 
     file_name = args.pop(0)
     hash_name = os.path.splitext(os.path.basename(file_name))[0]
 
-    print("Generating hashes for file '%s (%s)" % (file_name, hash_name))
+    print("Generating hashes for string '%s' (%s)" % (file_name, hash_name))
     hash32, hash64 = gen_xxhash(hash_name)
 
     print("Hash32: 0x%s" % hash32)
@@ -710,7 +710,7 @@ def main():
     elif mode == "pack":
         return pack_store(sys.argv)
     elif mode == "hash":
-        return hash_file(sys.argv)
+        return gen_hash(sys.argv)
     elif mode in ['-h', '--h', 'help']:
         return usage()
 
