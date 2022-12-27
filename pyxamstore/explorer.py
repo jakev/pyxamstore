@@ -8,6 +8,7 @@ import os
 import os.path
 import sys
 import json
+import shutil
 
 import lz4.block
 import xxhash
@@ -408,11 +409,14 @@ def usage():
     return 0
 
 
-def do_unpack(in_directory, in_arch):
+def do_unpack(in_directory, in_arch, force):
 
     """Unpack a assemblies.blob/manifest"""
 
     arch_assemblies = False
+
+    if force and os.path.isdir("out/"):
+        shutil.rmtree("out/")
 
     # First check if all files exist.
     if os.path.isdir("out/"):
@@ -645,11 +649,15 @@ def unpack_store(args):
                         default='arm64',
                         dest='architecture',
                         help='Which architecture to unpack: arm(64), x86(_64)')
+    parser.add_argument('--force', '-f', action='store_const',
+                        dest='force', const=True, default=False,
+                        help="Force re-create out/ directory.")
 
     parsed_args = parser.parse_args(args)
 
     return do_unpack(parsed_args.directory,
-                     parsed_args.architecture)
+                     parsed_args.architecture,
+                     parsed_args.force)
 
 
 def pack_store(args):
