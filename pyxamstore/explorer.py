@@ -494,16 +494,16 @@ def do_pack(in_json_config):
 
     # Write new assemblies.manifest
     print("Writing 'assemblies.manifest.new'...")
-    assemblies_manifest_f = open("assemblies.manifest.new", "w")
+    assemblies_manifest_f = open("assemblies.manifest.new", "w", newline='\n')
 
     assemblies_manifest_f.write("Hash 32     Hash 64             ")
-    assemblies_manifest_f.write("Blob ID  Blob idx  Name\r\n")
+    assemblies_manifest_f.write("Blob ID  Blob idx  Name\n")
 
     #for _, store_json in json_data['stores'].items():
     for assembly in json_data['assemblies']:
         hash32, hash64 = gen_xxhash(assembly['name'])
 
-        line = ("0x%08s  0x%016s  %03d      %04d      %s\r\n"
+        line = ("0x%08s  0x%016s  %03d      %04d      %s\n"
                 % (hash32, hash64, assembly['store_id'],
                    assembly['blob_idx'], assembly['name']))
 
