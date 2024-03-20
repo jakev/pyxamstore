@@ -2,9 +2,9 @@
 This is an alpha release of an `assemblies.blob` AssemblyStore parser written in Python. The tool is capable of unpack and repackaging `assemblies.blob` and `assemblies.manifest` Xamarin files from an APK.
 
 ## Installing
-Run the installer script:
-
-    python setup.py install
+```shell
+    pip3 install build && python3 -m build && pip install --force-reinstall dist/pyxamstore-1.0.0-py3-none-any.whl
+```
 
 You can then use the tool by calling `pyxamstore`
 
@@ -28,5 +28,4 @@ From here you'll need to copy the new manifest and blobs as well as repackage/si
 Additional file format details can be found on my [personal website](https://www.thecobraden.com/posts/unpacking_xamarin_assembly_stores/).
 
 # Known Limitations
-* Python3 support (working on it!)
 * DLLs that have debug/config data associated with them
