@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "pyxamstore"
+version = "1.0.0"
+description = "Python utility for parsing Xamarin AssemblyStore blob files"
+authors = ["jakev", "AbhiTheModder"]
+keywords = ["android", "device", "security", "mobile", "reverse-engineering", "Xamarin", "AssemblyStore", "reverse", "hacking"]
+
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Natural Language :: English',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/jakev/pyxamstore"
+repository = "https://github.com/jakev/pyxamstore"
+documentation = "https://github.com/jakev/pyxamstore"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+docopt = "^0.6.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pyxamstore = "pyxamstore:main"
